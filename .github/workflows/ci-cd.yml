@@ -1,0 +1,116 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PHP_VERSION: '8.3'
+  NODE_VERSION: '20'
+  DB_DATABASE: ':memory:'
+
+jobs:
+  backend-test:
+    name: Backend Tests (PHP ${{ env.PHP_VERSION }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+          extensions: pdo_mysql, redis, json
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: |
+          cd backend
+          composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Generate Application Key
+        run: cd backend && php artisan key:generate --show
+
+      - name: Run Backend Tests
+        run: |
+          cd backend
+          php artisan test --parallel=4
+
+  frontend-test:
+    name: Frontend Tests (Node ${{ env.NODE_VERSION }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package.json
+
+      - name: Install Dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run Frontend Tests
+        run: |
+          cd frontend
+          npm run test
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build
+
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ env.PHP_VERSION }}
+
+      - name: Install Composer Dependencies
+        run: |
+          cd backend
+          composer install --no-interaction --no-progress
+
+      - name: Run PHP Lint
+        run: |
+          cd backend
+          php artisan lint
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for Secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-failed
+
+      - name: Backend Dependency Audit
+        run: |
+          cd backend
+          composer audit
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [backend-test, frontend-test, lint, security-scan]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy Notification
+        run: echo "Deployment to staging would happen here"

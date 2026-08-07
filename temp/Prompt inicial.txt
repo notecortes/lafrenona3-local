@@ -1,0 +1,270 @@
+Actúa como arquitecto principal de software, especialista en Laravel 11, Vue 3, SaaS multi-tenant, seguridad de aplicaciones, sistemas distribuidos y calidad de software.
+
+Trabaja exclusivamente dentro del workspace actual y sigue estrictamente todas las reglas de `AGENTS.md`.
+
+## Objetivo de esta tarea
+
+Antes de implementar cualquier fase, debes:
+
+1. Crear tres ADRs arquitectónicos.
+2. Analizar exclusivamente la Fase 1.
+3. Preparar un plan técnico verificable.
+4. Detenerte y esperar mi autorización.
+
+No debes implementar código de aplicación, crear migraciones, ejecutar migraciones, levantar contenedores, modificar Docker, instalar dependencias ni ejecutar pruebas en esta tarea.
+
+## Lectura obligatoria
+
+Lee primero, de principio a fin:
+
+- `AGENTS.md`
+- Todas las especificaciones funcionales disponibles: `fase_1_*.md` hasta `fase_18_*.md`
+- Todos los planes QA disponibles: `qa_fase_*.md`
+- `pruebas_adicionales_endurecimiento_fases_01_18.md`
+
+Después, para el análisis técnico detallado de la Fase 1, revisa específicamente:
+
+- `fase_1_infraestructura.md`
+- `qa_fase_01_infraestructura_base_de_datos_y_autenticacion.md`
+- Los casos `EXT-F01-*` del documento `pruebas_adicionales_endurecimiento_fases_01_18.md`
+
+También inspecciona el contenido existente del repositorio, pero sin modificar ningún archivo que no sea un ADR.
+
+## Parte 1 — ADRs obligatorios
+
+Crea únicamente los siguientes archivos dentro de `docs/adr/`:
+
+```text
+docs/adr/0001-multitenancy-y-tenant-context.md
+docs/adr/0002-eventos-outbox-e-idempotencia.md
+docs/adr/0003-dinero-pagos-y-fiscalidad.md
+```
+
+Si la carpeta `docs/adr/` no existe, créala.
+
+No crees ningún otro archivo en esta parte. No modifiques código existente.
+
+### Formato obligatorio de cada ADR
+
+Usa esta estructura Markdown:
+
+```md
+# ADR-NNNN — Título
+
+- Estado: Propuesto
+- Fecha: YYYY-MM-DD
+- Decisores: Equipo de arquitectura
+
+## Contexto
+
+Explica el problema y las restricciones específicas de este proyecto.
+
+## Decisión
+
+Describe la decisión técnica concreta, los límites de aplicación y las reglas obligatorias.
+
+## Alternativas consideradas
+
+| Alternativa | Ventajas | Riesgos o motivos de descarte |
+|---|---|---|
+
+## Consecuencias
+
+### Positivas
+- ...
+
+### Costes y riesgos
+- ...
+
+## Reglas de seguridad e integridad
+
+- ...
+
+## Estrategia de pruebas
+
+- Pruebas unitarias.
+- Pruebas de integración.
+- Pruebas de seguridad.
+- Pruebas de concurrencia e idempotencia.
+- Pruebas de regresión.
+
+## Impacto por fases
+
+| Fases | Impacto |
+|---|---|
+```
+
+### Contenido mínimo de cada ADR
+
+#### ADR 0001 — Multi-tenancy y Tenant Context
+
+Debe definir:
+
+- Aislamiento lógico por `restaurant_id`.
+- Defensa en profundidad: `TenantContext`, Global Scope, policies, middleware, validación de relaciones y restricciones SQL.
+- Prohibición de confiar en `restaurant_id` recibido desde el cliente.
+- Propagación explícita del tenant en requests, jobs, listeners, comandos, exportaciones y eventos.
+- Uso excepcional y auditado de `withoutGlobalScopes()` solo para servicios internos de superadmin.
+- Pruebas de IDOR/BOLA, acceso a recursos de otro tenant, exportaciones, WebSockets y relaciones cruzadas.
+- Estrategia de índices compuestos y unicidad por tenant.
+
+#### ADR 0002 — Eventos, Outbox e Idempotencia
+
+Debe definir:
+
+- Operaciones transaccionales con `DB::transaction()`.
+- Uso de `lockForUpdate()` en pedidos, inventario, reservas, cierre de mesa, caja y fiscalidad cuando aplique.
+- Patrón transactional outbox o alternativa equivalente fiable.
+- Persistencia del evento de dominio dentro de la misma transacción que modifica el estado de negocio.
+- Procesamiento asíncrono de impresión, WebSockets, inventario, emails y proveedores externos.
+- Deduplicación por `event_id`, `idempotency_key` o equivalente.
+- Separación entre eventos de dominio y eventos de interfaz/WebSocket.
+- Reintentos, errores recuperables, dead-letter queue o estrategia equivalente.
+- Pruebas de fallos parciales, eventos duplicados, reconexión, rollback, concurrencia y reintentos.
+
+#### ADR 0003 — Dinero, Pagos y Fiscalidad
+
+Debe definir:
+
+- Gestión de dinero sin `float`: céntimos enteros o `decimal` estricto.
+- Snapshots inmutables de precio, impuestos, descuentos, propinas y datos fiscales.
+- Modelo de transacción de pago append-only, separado del estado del pedido.
+- Cálculo de importes exclusivamente en backend.
+- Stripe Connect por tenant, validación de firma y timestamp de webhooks, deduplicación por evento y manejo de eventos fuera de orden.
+- Pago manual auditado, pagos fallidos, reintentos, reembolsos y conciliación.
+- Liberación de mesa solo tras una transición de pago válida o una excepción manual autorizada.
+- Registro fiscal append-only, payload canónico, encadenamiento hash y detección de alteraciones.
+- Diferenciar un registro antifraude interno de cualquier afirmación de cumplimiento real de Veri*Factu, TicketBAI u otra normativa.
+- Pruebas de doble cobro, importes manipulados, webhooks inválidos/repetidos, concurrencia, redondeos, facturas rectificativas y alteración de cadena hash.
+
+## Parte 2 — Diagnóstico y plan de la Fase 1
+
+Después de crear los tres ADRs, inspecciona el repositorio actual y prepara el plan técnico para implementar exclusivamente la Fase 1.
+
+No implementes la Fase 1 todavía.
+
+Crea el archivo:
+
+```text
+qa_resultados_implementacion/00_plan_fase_01.md
+```
+
+Este archivo es el único archivo adicional permitido fuera de `docs/adr/`.
+
+Debe incluir exactamente estas secciones:
+
+```md
+# Plan técnico — Fase 1
+
+## Estado actual del repositorio
+
+- Estructura encontrada.
+- Archivos existentes relevantes.
+- Estado de backend, frontend, Docker y tests.
+- Compatibilidad con Laravel 11, PHP, MySQL, Redis y Docker.
+
+## Documentación revisada
+
+- Especificación de Fase 1.
+- QA de Fase 1.
+- Casos EXT-F01 aplicables.
+- ADRs creados.
+
+## Dependencias y bloqueos
+
+- Dependencias técnicas.
+- Archivos o credenciales de ejemplo necesarios.
+- Riesgos de compatibilidad.
+- Bloqueos que impidan la implementación.
+
+## Alcance exacto de la Fase 1
+
+- Infraestructura Docker.
+- Backend Laravel.
+- MySQL y Redis.
+- Migraciones.
+- Modelos iniciales.
+- Laravel Sanctum.
+- Login API.
+- Tests exigidos.
+
+## Archivos a crear o modificar
+
+| Archivo | Acción | Motivo |
+|---|---|---|
+
+## Diseño de datos e integridad
+
+- Tablas y relaciones.
+- Foreign keys.
+- Índices.
+- Restricciones de unicidad.
+- Campos obligatorios.
+- Decisiones de tenant aplicables desde Fase 1.
+- Decisiones de migración compatibles con los ADRs.
+
+## API y contratos
+
+| Método | Ruta | Autenticación | Entrada | Respuesta | Errores esperados |
+|---|---|---|---|---|---|
+
+## Plan de implementación por pasos
+
+1. ...
+2. ...
+3. ...
+
+## Plan de pruebas
+
+### Tests funcionales
+- ...
+
+### Tests de seguridad
+- ...
+
+### Tests de endurecimiento EXT-F01
+- ...
+
+### Criterio de aprobación
+- ...
+
+## Comandos previstos
+
+```bash
+# Solo listar comandos; no ejecutarlos todavía
+```
+
+## Riesgos y decisiones que requieren aprobación
+
+| Decisión o riesgo | Alternativas | Recomendación |
+|---|---|---|
+```
+
+## Reglas de calidad
+
+- No inventes funcionalidades fuera de las especificaciones.
+- No alteres los documentos de fases, QA o endurecimiento.
+- No modifiques `AGENTS.md`.
+- No generes código PHP, Vue, Docker, SQL ejecutable, migraciones ni tests todavía.
+- No ejecutes comandos que modifiquen el entorno.
+- No levantes Docker.
+- No instales dependencias.
+- No ejecutes migraciones.
+- No ejecutes pruebas.
+- Si detectas contradicciones entre documentos, documéntalas claramente en el plan y recomienda una decisión; no elijas silenciosamente.
+
+## Finalización
+
+Cuando termines:
+
+1. Muestra una lista de los cuatro archivos creados.
+2. Resume las decisiones arquitectónicas principales.
+3. Resume el plan de la Fase 1.
+4. Indica todos los bloqueos o decisiones que necesiten mi aprobación.
+5. Detente.
+
+Espera mi mensaje explícito antes de implementar cualquier cosa.
+
+El único mensaje que autoriza la implementación será equivalente a:
+
+“Apruebo los ADRs y el plan de la Fase 1. Implementa exclusivamente la Fase 1, ejecuta sus pruebas y genera qa_resultados_implementacion/fase_01.md. No avances a la Fase 2.”

@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: lafrenona3_staging_db
+    restart: unless-stopped
+    ports:
+      - "53306:3306"
+    environment:
+      MYSQL_DATABASE: lafrenona3_staging
+      MYSQL_ROOT_PASSWORD: ${STAGING_DB_ROOT_PASSWORD:-staging_root_pass_2024}
+      MYSQL_USER: ${STAGING_DB_USER:-lafrenona3_staging_user}
+      MYSQL_PASSWORD: ${STAGING_DB_PASSWORD:-staging_pass_2024}
+    volumes:
+      - lafrenona3_staging_db_data:/var/lib/mysql
+    networks:
+      - lafrenona3_staging_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${STAGING_DB_ROOT_PASSWORD:-staging_root_pass_2024}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: lafrenona3_staging_redis
+    restart: unless-stopped
+    ports:
+      - "56379:6379"
+    networks:
+      - lafrenona3_staging_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend.Dockerfile
+    container_name: lafrenona3_staging_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "5005:8000"
+    command: php-fpm
+    environment:
+      - APP_ENV=staging
+      - APP_DEBUG=false
+      - APP_URL=http://localhost:5005
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lafrenona3_staging_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: lafrenona3_staging_nginx
+    restart: unless-stopped
+    ports:
+      - "5080:80"
+      - "5443:443"
+    volumes:
+      - ./docker/nginx.staging.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - lafrenona3_staging_network
+
+networks:
+  lafrenona3_staging_network:
+    driver: bridge
+
+volumes:
+  lafrenona3_staging_db_data:
+    driver: local

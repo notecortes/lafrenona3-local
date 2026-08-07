@@ -1,0 +1,63 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: lafrenona3_db
+    restart: unless-stopped
+    ports:
+      - "43306:3306"
+    environment:
+      MYSQL_DATABASE: lafrenona3_matrix
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_USER: lafrenona3_user
+      MYSQL_PASSWORD: lafrenona3_password
+    volumes:
+      - lafrenona3_db_data:/var/lib/mysql
+    networks:
+      - lafrenona3_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    container_name: lafrenona3_redis
+    restart: unless-stopped
+    ports:
+      - "46379:6379"
+    networks:
+      - lafrenona3_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: ./docker/backend.Dockerfile
+    container_name: lafrenona3_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "4005:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lafrenona3_network
+
+networks:
+  lafrenona3_network:
+    driver: bridge
+
+volumes:
+  lafrenona3_db_data:
+    driver: local

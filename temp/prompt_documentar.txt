@@ -1,0 +1,334 @@
+Actúa como Technical Writer senior, DevOps Engineer y desarrollador full-stack responsable de crear la documentación definitiva de este proyecto.
+
+Trabaja exclusivamente sobre el código, configuración y documentación que ya existen en el workspace. No inventes funcionalidades, comandos, endpoints, variables de entorno, servicios ni requisitos que no estén realmente implementados.
+
+## Objetivo
+
+Genera documentación completa, clara y reproducible para que una persona técnica pueda:
+
+1. Entender qué hace el proyecto.
+2. Instalarlo desde cero en Linux, macOS o Windows con WSL2.
+3. Configurarlo sin exponer secretos.
+4. Ejecutarlo localmente con Docker.
+5. Usar cada perfil del sistema.
+6. Ejecutar tests, lint, build y pruebas E2E.
+7. Diagnosticar errores comunes.
+8. Instalarlo en otro equipo y restaurar datos de forma segura.
+9. Prepararlo para staging o producción.
+
+## Fuentes de verdad
+
+Lee antes de escribir:
+
+- `AGENTS.md`
+- Todos los archivos `fase_*.md`
+- Todos los archivos `qa_fase_*.md`
+- `pruebas_adicionales_endurecimiento_fases_01_18.md`
+- `docs/adr/*.md`
+- `docs/gstack/*.md`
+- `README.md`, si existe
+- `docker-compose.yml` y otros archivos Docker
+- `backend/`
+- `frontend/`
+- `.github/workflows/`
+- Archivos de configuración de Laravel, Vue, Vite, PHPUnit/Pest, Vitest, Playwright, Redis, Reverb y CI/CD
+- `.env.example`, `backend/.env.example` y ejemplos de configuración existentes
+
+Inspecciona también scripts, `package.json`, `composer.json`, rutas, migraciones, comandos Artisan, tests y servicios reales.
+
+## Regla crítica
+
+Documenta únicamente lo que esté implementado y sea verificable.
+
+Si una fase, función, integración o comando está especificado pero no está implementado, indícalo claramente como:
+
+- `Pendiente`
+- `Parcialmente implementado`
+- `No verificado`
+- `Requiere configuración externa`
+
+Nunca lo presentes como funcional.
+
+No modifiques código de aplicación, migraciones, infraestructura, dependencias ni tests. Solo crea o actualiza archivos de documentación.
+
+## Archivos a crear
+
+Crea esta estructura:
+
+```text
+docs/
+├── README.md
+├── INSTALACION.md
+├── CONFIGURACION.md
+├── USO.md
+├── ARQUITECTURA.md
+├── API.md
+├── PRUEBAS.md
+├── DESPLIEGUE.md
+├── BACKUP_Y_RESTAURACION.md
+├── SEGURIDAD.md
+├── SOLUCION_PROBLEMAS.md
+├── ESTADO_DEL_PROYECTO.md
+└── OPERACIONES.md
+```
+
+Actualiza también el `README.md` de la raíz para que sea breve y enlace a todos los documentos anteriores.
+
+## Contenido obligatorio
+
+### `README.md` de raíz
+
+Debe incluir:
+
+- Nombre y descripción breve del proyecto.
+- Estado real del proyecto.
+- Requisitos mínimos.
+- Inicio rápido de desarrollo.
+- Enlaces a toda la documentación en `docs/`.
+- Comandos principales verificados.
+- Aviso de que no deben utilizarse secretos reales ni credenciales de producción en local.
+
+### `docs/README.md`
+
+Debe actuar como índice navegable de toda la documentación.
+
+### `docs/INSTALACION.md`
+
+Debe explicar instalación limpia en:
+
+- Ubuntu/Debian.
+- macOS con Apple Silicon o Intel.
+- Windows mediante WSL2.
+
+Debe incluir, solo si son necesarios según el proyecto:
+
+- Git.
+- Docker Engine/Docker Desktop y Docker Compose.
+- Node.js y package manager real del proyecto.
+- PHP/Composer si se usan fuera de contenedores.
+- Python si existe agente de impresión.
+- Navegadores y dependencias de Playwright.
+
+Debe incluir:
+
+- Clonado o copia del repositorio.
+- Archivos `.env` a crear desde ejemplos.
+- Construcción e inicio de contenedores.
+- Instalación de dependencias.
+- Generación de claves.
+- Migraciones y seeders.
+- URLs locales de frontend, API, Reverb, correo de desarrollo u otros servicios reales.
+- Cómo detener, reiniciar y limpiar el entorno.
+
+No incluyas contraseñas reales: usa marcadores seguros y explica cómo generarlas.
+
+### `docs/CONFIGURACION.md`
+
+Debe documentar:
+
+- Todas las variables de entorno reales, agrupadas por servicio.
+- Cuáles son obligatorias, opcionales, exclusivas de desarrollo o producción.
+- Ejemplos con valores ficticios seguros.
+- Configuración de MySQL, Redis, Sanctum, Reverb, CORS, frontend, Stripe, correo, impresión, backups, monitorización y almacenamiento, únicamente si existen.
+- Gestión de secretos.
+- Diferencias entre local, testing, staging y producción.
+- Feature flags reales, si existen.
+
+### `docs/USO.md`
+
+Debe explicar el uso real por perfil:
+
+- SuperAdmin.
+- Owner.
+- Camarero/sala.
+- Cocina/barra.
+- Cliente QR.
+
+Para cada perfil, incluir:
+
+- Cómo iniciar sesión o acceder.
+- Permisos reales.
+- Flujo principal.
+- Limitaciones conocidas.
+- Capturas solo si existen en el repositorio; si no, no inventarlas.
+
+Documentar los flujos que estén realmente implementados:
+
+- Carta y QR.
+- Pedido.
+- Cocina/barra.
+- Alertas de sala.
+- Offline.
+- Pago.
+- Inventario.
+- Reservas.
+- Caja/fiscalidad.
+- Analítica.
+
+Indicar claramente los módulos no implementados o incompletos.
+
+### `docs/ARQUITECTURA.md`
+
+Debe incluir:
+
+- Diagrama ASCII de componentes.
+- Backend, frontend, base de datos, Redis, WebSockets, colas, impresión y servicios externos realmente existentes.
+- Estructura de directorios.
+- Modelo multi-tenant y límites de seguridad.
+- Roles y permisos.
+- Flujos de datos y eventos.
+- Migraciones y entidades principales.
+- Decisiones ADR relevantes.
+- Concurrencia, idempotencia, snapshots, outbox o equivalentes, solo si están implementados.
+- Separación entre requisitos diseñados y funcionalidad realmente presente.
+
+### `docs/API.md`
+
+Debe documentar la API real:
+
+- Base URL.
+- Autenticación.
+- Formato de errores.
+- Endpoints existentes.
+- Método, ruta, rol requerido, entrada, respuesta y errores.
+- Ejemplos `curl` seguros.
+- Webhooks y WebSockets si existen.
+- Rate limits reales, si están configurados.
+
+No documentes rutas que no estén implementadas.
+
+### `docs/PRUEBAS.md`
+
+Debe incluir:
+
+- Herramientas detectadas: PHPUnit/Pest, Vitest, Playwright, linters, análisis estático, carga y seguridad.
+- Preparación de entorno de test.
+- Comandos exactos verificados.
+- Ejecución por fase si los tests existen.
+- Datos de prueba.
+- Cómo ejecutar QA y endurecimiento.
+- Cómo leer resultados.
+- Qué pruebas requieren servicios simulados.
+- Cobertura y limitaciones reales.
+
+### `docs/DESPLIEGUE.md`
+
+Debe incluir:
+
+- Estado de preparación actual para producción.
+- Requisitos de servidor.
+- Despliegue con Docker si está soportado.
+- Variables de producción.
+- TLS, dominios, CORS, colas, workers, scheduler, Reverb y cron, solo si existen.
+- CI/CD real si está configurado.
+- Migraciones seguras.
+- Health checks.
+- Rollback.
+- Checklist antes de producción.
+
+Si no hay despliegue listo, explicar qué falta con una lista priorizada.
+
+### `docs/BACKUP_Y_RESTAURACION.md`
+
+Debe incluir:
+
+- Qué datos se respaldan.
+- Procedimiento real de backup.
+- Cifrado y almacenamiento, si existen.
+- Restauración completa en otro equipo.
+- Verificación posterior.
+- Prueba de restauración.
+- Limitaciones y pasos manuales pendientes.
+
+### `docs/SEGURIDAD.md`
+
+Debe incluir:
+
+- Multi-tenancy.
+- Autenticación y autorización.
+- QR y sesiones públicas.
+- Rate limiting.
+- Gestión de secretos.
+- Logs y privacidad.
+- Seguridad de pagos y webhooks.
+- Auditoría.
+- Dependencias y actualizaciones.
+- Checklist de seguridad preproducción.
+- Riesgos conocidos y pendientes.
+
+No afirmar cumplimiento normativo, RGPD, PCI DSS, Veri*Factu o TicketBAI si no existe evidencia verificable.
+
+### `docs/OPERACIONES.md`
+
+Debe incluir:
+
+- Arranque y parada.
+- Logs.
+- Estado de contenedores.
+- Workers, scheduler, Reverb y colas, si existen.
+- Reintentos y recuperación ante fallos.
+- Monitorización.
+- Mantenimiento habitual.
+- Rotación de secretos.
+- Procedimiento de incidencias.
+
+### `docs/SOLUCION_PROBLEMAS.md`
+
+Debe incluir problemas reales probables y cómo comprobarlos:
+
+- Contenedores no arrancan.
+- Puerto ocupado.
+- Error de conexión MySQL o Redis.
+- Migraciones fallidas.
+- Dependencias Composer o npm.
+- Permisos de archivos.
+- CORS/Sanctum.
+- Reverb/WebSocket.
+- PWA/Service Worker.
+- Playwright.
+- Variables de entorno.
+- Impresión local.
+- Stripe/webhooks de prueba.
+
+Para cada uno: síntoma, diagnóstico, comandos y solución segura.
+
+### `docs/ESTADO_DEL_PROYECTO.md`
+
+Debe crear una tabla de las fases 1 a 18:
+
+| Fase | Módulo | Estado | Evidencia | Tests detectados | Observaciones |
+|---|---|---|---|---|---|
+
+Estados permitidos:
+
+- Implementada y verificada.
+- Implementada sin verificar.
+- Parcialmente implementada.
+- No implementada.
+- Bloqueada.
+
+No marques “Implementada y verificada” si no hay pruebas ejecutables o evidencia en el repositorio.
+
+## Validación final
+
+Cuando termines:
+
+1. Revisa todos los enlaces Markdown.
+2. Asegura que todos los comandos están presentes en scripts/configuración reales.
+3. Confirma que no hay secretos reales documentados.
+4. Confirma que no se presentan funcionalidades pendientes como terminadas.
+5. Genera:
+
+```text
+docs/GENERACION_DOCUMENTACION.md
+```
+
+Con:
+
+- Archivos creados o modificados.
+- Fuentes inspeccionadas.
+- Funciones no documentadas por falta de implementación o evidencia.
+- Comandos verificados y comandos no verificados.
+- Preguntas o bloqueos pendientes.
+
+Finalmente, muéstrame un resumen de los documentos generados y detente.

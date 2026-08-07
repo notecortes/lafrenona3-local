@@ -1,0 +1,505 @@
+Actúa como Product Designer senior, UX/UI Designer, especialista en accesibilidad WCAG 2.1 AA y desarrollador frontend principal experto en Vue 3, Vite, Pinia, Axios, PWA, diseño responsive y aplicaciones operativas de restauración.
+
+Tu misión es diseñar e implementar una interfaz completa, moderna, rápida, bonita, accesible y funcional para este SaaS multi-tenant de gestión de restaurantes.
+
+Trabaja únicamente en el workspace actual.
+
+## Objetivo principal
+
+La experiencia más importante es la del cliente que escanea un código QR en una mesa y quiere pedir comida o bebida de la manera más rápida, clara y amigable posible desde su teléfono móvil.
+
+La interfaz debe minimizar pasos, dudas, errores y tiempo de pedido.
+
+El usuario debe poder:
+
+1. Abrir la carta desde QR.
+2. Entender inmediatamente en qué restaurante y mesa está.
+3. Explorar categorías y productos rápidamente.
+4. Ver precio, foto si existe, descripción, alérgenos, opciones y disponibilidad.
+5. Añadir productos al pedido con muy pocos toques.
+6. Revisar y modificar el pedido fácilmente.
+7. Enviar el pedido con confirmación inequívoca.
+8. Ver el estado: pendiente local, enviado, confirmado, en preparación, listo o entregado.
+9. Llamar al camarero.
+10. Solicitar la cuenta.
+11. Pagar, añadir propina y recibir confirmación/ticket cuando esos módulos estén implementados.
+
+## Lectura obligatoria
+
+Antes de modificar código, lee:
+
+- `AGENTS.md`
+- Todas las especificaciones `fase_1_*.md` hasta `fase_18_*.md`
+- Todos los documentos `qa_fase_*.md`
+- `pruebas_adicionales_endurecimiento_fases_01_18.md`
+- Todos los ADR en `docs/adr/`
+- Documentación existente en `docs/`
+- Código existente dentro de `frontend/`
+- Rutas, contratos API, stores, servicios Axios, Laravel Echo y tests existentes.
+
+No inventes endpoints, roles, respuestas API ni funcionalidades de backend. Utiliza exclusivamente contratos existentes.
+
+Si una funcionalidad aún no está implementada en backend:
+
+- Diseña el estado visual completo.
+- Aísla la integración en un servicio o adapter.
+- Usa datos mock exclusivamente en desarrollo/story/demo.
+- Marca visualmente el estado como no disponible cuando sea necesario.
+- No simules éxito real ni datos sensibles.
+- Documenta la dependencia pendiente.
+
+## Restricción de alcance
+
+Primero debes crear un documento de diseño y un plan de implementación.
+
+No escribas código en la primera respuesta.
+
+Crea únicamente:
+
+```text
+docs/frontend/00_diseno_ux_ui.md
+docs/frontend/01_plan_implementacion_frontend.md
+```
+
+Después muéstrame el plan y espera mi aprobación explícita.
+
+No crees componentes, no modifiques `package.json`, no instales dependencias, no ejecutes tests, no levantes servicios ni cambies rutas hasta que yo apruebe el plan.
+
+---
+
+# Principios de diseño
+
+## Prioridad de usuarios
+
+Diseña cuatro experiencias separadas, no una única interfaz genérica:
+
+1. Cliente QR público: móvil primero, muy rápida, sin registro y con interacción táctil.
+2. Sala/camareros: tablet primero, operación rápida, alertas visibles y baja conectividad.
+3. Cocina/barra: pantalla grande, lectura a distancia, contraste alto, interacción mínima y cambios de estado rápidos.
+4. Owner/SuperAdmin: escritorio primero, datos, tablas, filtros, formularios y controles administrativos.
+
+## Sistema visual
+
+Crear un diseño profesional de hostelería contemporánea:
+
+- Sensación: cálida, premium, cercana, rápida y fiable.
+- Evitar estilo corporativo frío, paneles genéricos y exceso de glassmorphism.
+- Utilizar una base neutra cálida: crema, blanco roto o gris muy suave.
+- Usar un color primario configurable por restaurante mediante variables CSS.
+- Colores semánticos consistentes:
+  - Éxito: verde.
+  - Atención: ámbar.
+  - Error: rojo.
+  - Información: azul.
+  - Cocina: naranja/rojo cálido.
+  - Barra: violeta/azul.
+- Contraste WCAG AA obligatorio.
+- Tipografía legible y rápida; tamaños en `rem`, nunca depender de tamaños fijos pequeños.
+- Iconos claros con texto visible para acciones importantes.
+- Bordes, elevación y movimiento sutiles; animaciones nunca deben retrasar acciones.
+- Respetar `prefers-reduced-motion`.
+- No usar color como única forma de comunicar estado.
+
+## Responsive
+
+Definir y probar al menos estos contextos:
+
+- Cliente móvil: 320 px a 480 px.
+- Cliente móvil grande: 481 px a 767 px.
+- Tablet/sala: 768 px a 1023 px.
+- Escritorio owner/admin: 1024 px o superior.
+- Cocina: pantallas horizontales de 1024 px o superior.
+
+La carta pública debe ser mobile-first. Nunca debe obligar a zoom, tener scroll horizontal ni presentar botones táctiles demasiado pequeños.
+
+## Accesibilidad obligatoria
+
+- HTML semántico.
+- Cada control debe tener etiqueta accesible.
+- Navegación completa por teclado.
+- Foco visible de alto contraste.
+- Gestión de foco al abrir/cerrar modales, paneles y mensajes de error.
+- `aria-live` para confirmación de pedido, cambios de conexión y alertas.
+- Errores de formulario con texto descriptivo y relación con el campo.
+- Contraste mínimo WCAG AA.
+- No depender solo de hover.
+- Soporte para lectores de pantalla.
+- Respeto de `prefers-reduced-motion`.
+- Pruebas con axe o herramienta equivalente.
+
+---
+
+# Experiencia 1 — Cliente QR
+
+## Flujo prioritario: hacer un pedido
+
+Diseña este flujo para completarse con el mínimo número de acciones:
+
+```text
+Escaneo QR
+  -> Validación de sesión de mesa
+  -> Carta del restaurante
+  -> Selección de categoría o búsqueda
+  -> Detalle rápido del producto
+  -> Añadir al pedido
+  -> Carrito persistente y visible
+  -> Confirmación
+  -> Pedido enviado o pendiente de sincronización
+  -> Seguimiento de estado
+```
+
+## Pantalla de carta
+
+Debe incluir:
+
+- Cabecera compacta:
+  - Logo/nombre del restaurante.
+  - Número o nombre de mesa.
+  - Estado de conexión.
+  - Acceso al carrito con contador y total.
+- Mensaje discreto de bienvenida.
+- Selector horizontal de categorías sticky.
+- Buscador rápido por nombre.
+- Filtros opcionales y fáciles de entender:
+  - Vegano.
+  - Vegetariano.
+  - Sin alérgenos seleccionados.
+  - Disponible.
+- Tarjetas de producto táctiles:
+  - Imagen opcional con fallback elegante.
+  - Nombre.
+  - Precio.
+  - Descripción breve.
+  - Etiquetas de alérgenos y dieta.
+  - Estado de disponibilidad.
+  - Botón visible “Añadir”.
+- Productos agotados distinguibles y no accionables.
+- Skeleton loaders durante carga.
+- Estado vacío y estado de error con reintento.
+- Modo sin conexión claro y no alarmista.
+
+## Detalle de producto
+
+Usar bottom sheet móvil o modal accesible.
+
+Debe permitir:
+
+- Ver imagen, nombre, descripción, alérgenos, precio y disponibilidad.
+- Elegir cantidad.
+- Añadir notas si el backend lo soporta.
+- Confirmar “Añadir al pedido”.
+- Cerrar sin perder contexto.
+- No ocultar información importante detrás de gestos obligatorios.
+
+## Carrito
+
+Debe ser accesible rápidamente desde cualquier pantalla.
+
+Incluir:
+
+- Lista de líneas.
+- Imagen miniatura opcional.
+- Nombre, precio unitario, cantidad y subtotal.
+- Incrementar/disminuir/eliminar.
+- Notas si existen.
+- Total claro.
+- Estado de sincronización:
+  - Guardado localmente.
+  - Enviando.
+  - Confirmado.
+  - Reintento necesario.
+- Botón principal sticky:
+  - “Enviar pedido”.
+  - Deshabilitado con explicación cuando no se pueda enviar.
+- Confirmación final que evite doble envío.
+- Prevención de doble toque e idempotencia visual.
+- Feedback con `aria-live`.
+
+## Postpedido
+
+Crear una vista o panel “Mi pedido” con:
+
+- Línea temporal de estados.
+- Estado de cada artículo cuando esté disponible.
+- Aviso claro de pedido enviado y confirmado.
+- Aviso de sincronización offline pendiente.
+- Acciones secundarias:
+  - “Llamar al camarero”.
+  - “Solicitar la cuenta”.
+  - “Pagar ahora”, solo si el backend/pago está disponible.
+- No permitir modificar pedidos ya enviados salvo que el backend lo soporte.
+
+## Alertas y pago
+
+Diseñar pantallas o paneles para:
+
+- Llamar al camarero:
+  - Acción clara.
+  - Confirmación.
+  - Prevención de spam.
+  - Estado “Solicitud enviada”.
+- Solicitar cuenta:
+  - Confirmación y estado.
+- Pago:
+  - Resumen de cuenta.
+  - Propina opcional con cantidades predefinidas y entrada personalizada.
+  - Estado de pago seguro.
+  - Confirmación final.
+  - Ticket digital disponible si existe.
+
+No incorporar formularios de tarjeta propios. La captura de pago debe delegarse en Stripe o proveedor compatible cuando exista.
+
+---
+
+# Experiencia 2 — Sala
+
+Diseñar para tablet horizontal y móvil de trabajo.
+
+Pantallas:
+
+- Inicio de sesión.
+- Dashboard/mapa de sala.
+- Detalle de mesa.
+- Alertas activas.
+- Reservas y lista de espera.
+- Estado de sincronización offline.
+
+## Room Dashboard
+
+Debe incluir:
+
+- Plano configurable o cuadrícula clara de mesas.
+- Cada mesa con:
+  - Número.
+  - Estado: libre, ocupada, solicitando camarero, solicitando cuenta, pago pendiente.
+  - Tiempo desde última alerta o pedido si está disponible.
+  - Indicador de reserva próxima.
+- Leyenda accesible, no basada solo en color.
+- Filtros: zona, estado, alertas y reservas.
+- Alertas priorizadas arriba.
+- Acciones rápidas con confirmación para:
+  - Atender alerta.
+  - Abrir mesa.
+  - Ver pedido.
+  - Solicitar/cerrar cuenta, si procede.
+- Actualización WebSocket con fallback de refresco seguro.
+- Estado de conexión y cola offline siempre visible.
+
+---
+
+# Experiencia 3 — Cocina y barra
+
+Diseñar para pantalla horizontal, operación de alta velocidad y lectura a distancia.
+
+Pantallas:
+
+- Kitchen Display System.
+- Vista de barra, si se diferencia por `target_area`.
+- Historial reciente.
+- Configuración de audio/visual y conexión de impresora, si existe.
+
+## KDS
+
+Debe incluir:
+
+- Columnas por estado: pendiente, preparando, listo.
+- Tarjetas grandes, contrastadas y legibles.
+- Número de mesa, hora/transcurrido, productos, cantidades y notas.
+- Diferenciar cocina y barra.
+- Priorización por antigüedad.
+- Indicador visual de retraso sin depender solo del color.
+- Acción grande para cambiar estado.
+- Confirmación o deshacer en acciones irreversibles.
+- Actualización en tiempo real.
+- Estado de conexión Reverb.
+- Estado de impresión: pendiente, impreso, error/reintento, solo si está disponible.
+- Modo reducido de animaciones.
+- No mostrar datos administrativos, importes internos ni otros tenants.
+
+---
+
+# Experiencia 4 — Owner y SuperAdmin
+
+Diseñar para escritorio, pero usable en tablet.
+
+## Owner
+
+Pantallas:
+
+- Resumen del restaurante.
+- Gestión de carta: categorías y productos.
+- Personal.
+- Mesas.
+- Inventario y escandallos.
+- Reservas.
+- Analítica.
+- Auditoría, si el rol lo permite.
+- Configuración visual del restaurante.
+
+Características:
+
+- Navegación lateral clara y colapsable.
+- Encabezado con restaurante actual, estado de suscripción y perfil.
+- Tablas con búsqueda, filtros, orden y paginación.
+- Formularios con validación progresiva.
+- Confirmación para acciones destructivas.
+- Estados vacíos útiles con CTA.
+- Alertas de stock, reservas y operación.
+- Acciones rápidas para crear producto, empleado, mesa o reserva.
+- Nunca ocultar errores de API.
+- Mostrar permisos o módulo no disponible sin romper la interfaz.
+
+## SuperAdmin
+
+Pantallas:
+
+- Dashboard global.
+- Owners.
+- Restaurantes.
+- Suscripciones y planes.
+- Estado y suspensión de restaurantes.
+- Métricas globales solo si están implementadas.
+
+Características:
+
+- Separación visual evidente respecto a la experiencia owner.
+- Advertencia y confirmación reforzada para suspensión/reactivación.
+- Trazabilidad de acciones administrativas.
+- Acceso a datos globales únicamente cuando el backend autorice el rol.
+- Nunca asumir permisos exclusivamente en frontend.
+
+---
+
+# Arquitectura frontend obligatoria
+
+Usa la estructura existente si ya está implementada. Si necesitas proponer cambios, inclúyelos primero en el plan, no los implementes sin aprobación.
+
+Preferir una estructura equivalente a:
+
+```text
+frontend/src/
+├── app/
+├── router/
+├── layouts/
+├── views/
+│   ├── client/
+│   ├── staff/
+│   ├── kitchen/
+│   ├── owner/
+│   └── superadmin/
+├── components/
+│   ├── ui/
+│   ├── client/
+│   ├── staff/
+│   ├── kitchen/
+│   └── admin/
+├── stores/
+├── services/
+├── composables/
+├── config/
+├── utils/
+├── assets/
+└── styles/
+```
+
+Reglas:
+
+- Vue 3 con Composition API y `<script setup>`.
+- Router con lazy loading por áreas: público, staff, cocina, owner, admin.
+- Pinia para estado de autenticación, carta, carrito, red/offline, alertas y UI.
+- Axios centralizado con interceptores seguros.
+- Laravel Echo centralizado; limpiar suscripciones en `onUnmounted`.
+- Composables para conexión, carrito, accesibilidad, notificaciones y WebSockets.
+- Componentes pequeños, reutilizables y probados.
+- No poner secretos ni lógica de autorización real en frontend.
+- La UI refleja autorización del backend; no la sustituye.
+- Mantener separación clara entre datos de demo y datos reales.
+- No añadir dependencias nuevas sin justificarlo en el plan.
+
+---
+
+# Rendimiento obligatorio
+
+Para la carta pública:
+
+- Mobile-first.
+- Code splitting.
+- No cargar módulos owner, admin, KDS, Stripe ni bibliotecas pesadas en la primera carga de carta.
+- Imágenes optimizadas, lazy loading y fallback.
+- Evitar renderizados innecesarios.
+- Presupuesto de tamaño de bundle acorde con la especificación existente.
+- Mostrar contenido útil mientras carga.
+- PWA segura, sin cachear de forma peligrosa sesiones, pagos o datos privados.
+- Actualización de service worker comprensible para usuario.
+
+---
+
+# Estados obligatorios en todas las pantallas
+
+Todo flujo debe tener diseño y componentes para:
+
+- Cargando.
+- Vacío.
+- Éxito.
+- Error recuperable.
+- Error no recuperable.
+- Sin permisos.
+- Sin conexión.
+- Sincronizando.
+- Cambios guardados localmente.
+- Reintento disponible.
+- No disponible por suscripción/suspensión, cuando aplique.
+
+---
+
+# Contenido de docs/frontend/00_diseno_ux_ui.md
+
+Debe incluir:
+
+1. Objetivo de producto y usuarios.
+2. Principios UX.
+3. Sistema visual: color, tipografía, espaciado, iconografía, componentes y estados.
+4. Breakpoints y comportamiento responsive.
+5. Arquitectura de información.
+6. Mapa de rutas y perfiles.
+7. Flujos de cliente QR, sala, cocina, owner y superadmin.
+8. Wireframes ASCII o descripciones estructuradas de cada pantalla.
+9. Reglas de accesibilidad.
+10. Reglas de rendimiento y PWA.
+11. Estados de error, offline y sincronización.
+12. Lista de componentes reutilizables.
+13. Riesgos, dependencias backend y decisiones pendientes.
+
+# Contenido de docs/frontend/01_plan_implementacion_frontend.md
+
+Debe incluir:
+
+1. Estado actual detectado del frontend.
+2. Archivos existentes reutilizables.
+3. Archivos a crear o modificar.
+4. Orden de implementación recomendado.
+5. Contratos API requeridos y estado de disponibilidad.
+6. Stores, composables y servicios necesarios.
+7. Estrategia de testing:
+   - Vitest.
+   - Playwright si está disponible.
+   - axe o auditoría accesible.
+   - Pruebas responsive.
+   - Pruebas offline.
+8. Comandos que se ejecutarán después, pero no ejecutar todavía.
+9. Criterios de aceptación UX por experiencia.
+10. Riesgos y decisiones que requieren mi aprobación.
+
+# Finalización de esta tarea
+
+Cuando termines:
+
+1. Crea solamente los dos documentos indicados.
+2. Resume el enfoque visual y de UX.
+3. Lista los flujos priorizados.
+4. Lista los cambios de frontend propuestos.
+5. Indica dependencias de backend que falten.
+6. Indica decisiones que necesitan mi aprobación.
+7. Detente y espera mi autorización explícita.
+
+No escribas código aún.

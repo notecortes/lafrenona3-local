@@ -1,0 +1,20 @@
+Apruebo el diseño y el plan de frontend.
+
+Implementa primero exclusivamente la experiencia de Cliente QR:
+- Carta pública.
+- Categorías.
+- Búsqueda y filtros.
+- Detalle de producto.
+- Carrito.
+- Confirmación visual de pedido.
+- Estados de carga, error, offline y sincronización.
+- Acciones de llamar camarero y solicitar cuenta cuando existan endpoints.
+- Responsive mobile-first y WCAG 2.1 AA.
+
+Respeta los contratos API existentes y no inventes backend.
+Crea o actualiza los tests de frontend necesarios.
+Ejecuta test, lint, build y auditoría de accesibilidad disponibles.
+Genera `docs/frontend/02_resultado_cliente_qr.md`.
+
+No implementes todavía sala, cocina, owner ni superadmin.
+Detente al terminar y espera mi confirmación.

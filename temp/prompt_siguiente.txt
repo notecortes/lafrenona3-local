@@ -1,0 +1,7 @@
+La Fase anterior está aprobada. Lee AGENTS.md y prepara el plan
+para implementar exclusivamente la Fase NN.
+
+Lee fase_NN_*.md, qa_fase_NN_*.md y los casos EXT-FNN-* del documento
+pruebas_adicionales_endurecimiento_fases_01_18.md.
+
+No modifiques archivos hasta que yo apruebe el plan.
