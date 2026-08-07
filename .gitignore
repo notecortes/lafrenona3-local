@@ -1,0 +1,15 @@
+# Dependencias y builds frontend
+frontend/node_modules/
+frontend/dist/
+
+# Dependencias PHP
+backend/vendor/
+
+# Entornos y secretos
+backend/.env
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
