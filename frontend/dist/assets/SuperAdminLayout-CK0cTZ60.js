@@ -1,1 +1,0 @@
-import{_ as o}from"./index-e_v-eTmP.js";import{g as s,z as t,o as a}from"./vendor-core-E30FTMQW.js";import"./vendor-http-BY7rFuN-.js";const r={class:"superadmin-layout"};const d=o({},[["render",function(o,d){return a(),s("div",r,[t(o.$slots,"default",{},void 0)])}],["__scopeId","data-v-b9ab83ad"]]);export{d as default};

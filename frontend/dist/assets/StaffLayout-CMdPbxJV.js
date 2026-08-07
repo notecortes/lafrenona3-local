@@ -1,1 +1,0 @@
-import{_ as o}from"./index-e_v-eTmP.js";import{g as s,z as t,o as r}from"./vendor-core-E30FTMQW.js";import"./vendor-http-BY7rFuN-.js";const a={class:"staff-layout"};const d=o({},[["render",function(o,d){return r(),s("div",a,[t(o.$slots,"default",{},void 0)])}],["__scopeId","data-v-318bde3d"]]);export{d as default};

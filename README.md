@@ -12,8 +12,9 @@ Aplicación SaaS para la gestión integral de restaurantes multi-tenant, con aut
 
 ## Estado actual
 
-- **Tests backend**: 317/317 aprobados (100%)
-- **Tests frontend**: 29/29 aprobados (100%)
+- **Fases implementadas**: 18/18 (100%)
+- **Tests backend (PHPUnit)**: 317/317 aprobados (100%)
+- **Tests frontend (Vitest)**: 29/29 aprobados (100%)
 - **Tests totales**: 346/346 aprobados (100%)
 - **Migraciones**: 26 | Controladores: 22 | Modelos: 17 | Servicios: 6
 - **Seguridad**: CORS configurado, rate limiting, CSP headers, timing attack fix, tenant isolation
@@ -26,27 +27,123 @@ Aplicación SaaS para la gestión integral de restaurantes multi-tenant, con aut
 - Node.js 18+ (para desarrollo frontend)
 - macOS, Linux o Windows con WSL2
 
-## Inicio rápido
+---
+
+## Probar en local
+
+### Opción A — Docker (recomendado)
 
 ```bash
-# 1. Clonar
+# 1. Clonar y configurar
 git clone <repo-url>
 cd lafrenona3-qwen
-
-# 2. Configurar entorno
 cp backend/.env.example backend/.env
 
-# 3. Construir y levantar contenedores
+# 2. Construir y levantar contenedores
 docker compose up -d --build
+
+# 3. Instalar dependencias PHP y generar clave
+docker compose exec backend composer install
+docker compose exec backend php artisan key:generate
 
 # 4. Migrar base de datos
 docker compose exec backend php artisan migrate:fresh
 
-# 5. Acceder
-# Frontend: http://localhost:3000
-# API:     http://localhost:4005/api/v1
-# Backend: http://localhost:4005
+# 5. Verificar servicios
+docker compose ps
+# Esperar: db (healthy), redis (healthy), backend (running), frontend (running)
+
+# 6. Acceder
+# Frontend:  http://localhost:3000
+# API:       http://localhost:4005/api/v1
+# Health:    http://localhost:4005/up
 ```
+
+**Crear usuario de prueba:**
+
+```bash
+docker compose exec backend php artisan tinker
+```
+
+```php
+$restaurant = \App\Models\Restaurant::create([
+    'name' => 'Mi Restaurante',
+    'slug' => 'mi-restaurante',
+    'status' => 'active',
+]);
+
+$user = \App\Models\User::create([
+    'name' => 'Owner',
+    'email' => 'owner@example.com',
+    'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+    'role' => 'owner',
+    'restaurant_id' => $restaurant->id,
+]);
+
+echo "Login: owner@example.com / password123\n";
+```
+
+### Opción B — Sin Docker (host nativo)
+
+```bash
+# 1. Configurar .env
+cp backend/.env.local.example backend/.env
+
+# 2. Backend
+cd backend
+composer install
+php artisan key:generate
+php artisan migrate --force
+php artisan serve --host=0.0.0.0 --port=8000
+
+# 3. Frontend (otra terminal)
+cd frontend
+npm ci
+npm run dev -- --host 0.0.0.0 --port 3000
+```
+
+### Comandos de prueba
+
+```bash
+# Tests backend
+docker compose exec backend php artisan test
+
+# Tests frontend
+cd frontend && npm run test
+
+# Build frontend
+cd frontend && npm run build
+
+# Lint PHP
+docker compose exec backend php artisan pint
+
+# Logs en tiempo real
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f db
+
+# Diagnóstico
+docker compose exec backend php artisan about
+docker compose exec backend php artisan migrate:status
+docker compose exec backend php artisan cache:clear
+```
+
+### Detener y limpiar
+
+```bash
+# Parar contenedores (mantiene datos)
+docker compose down
+
+# Parar y eliminar volúmenes (elimina BD)
+docker compose down -v
+
+# Reiniciar todo limpio
+docker compose down -v
+docker compose up -d --build
+docker compose exec backend php artisan migrate:fresh
+```
+
+---
 
 ## Comandos principales
 

@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
+import { fileURLToPath } from 'url'
 import { resolve } from 'path'
+
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
 
 export default defineConfig({
   plugins: [
@@ -83,10 +86,19 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-core': ['vue', 'vue-router', 'pinia'],
-          'vendor-http': ['axios'],
-          'vendor-pwa': ['workbox-window']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('vue') || id.includes('pinia') || id.includes('vue-router')) {
+              return 'vendor-core'
+            }
+            if (id.includes('axios')) {
+              return 'vendor-http'
+            }
+            if (id.includes('workbox')) {
+              return 'vendor-pwa'
+            }
+            return 'vendor-common'
+          }
         }
       }
     },
@@ -105,7 +117,7 @@ export default defineConfig({
     strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://localhost:4005',
         changeOrigin: true
       }
     }

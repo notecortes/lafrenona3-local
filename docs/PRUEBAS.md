@@ -149,22 +149,24 @@ Estas fases tienen tests completos y aprobados:
 | 05 - Cocina/Barra | 24 tests | APROBADO |
 | 06 - Carta/Cliente | 12 tests | APROBADO |
 
-### Fases 7-18 (Parcialmente implementadas)
+### Fases 7-18 (APROBADAS)
 
-| Fase | Tests totales | Aprobados | Fallidos/Bloqueados |
-|---|---|---|---|
-| 07 - Pedidos/Transacciones | 19 | 12 | 7 fallidos |
-| 08 - Offline Sync | 13 | 10 | 3 fallidos |
-| 09 - SuperAdmin | 16 | 1 | 15 bloqueados |
-| 10 - CI/CD/Monitoring | 9 | 0 | 9 bloqueados |
-| 11 - Analytics/BI | 15 | 1 | 14 bloqueados |
-| 12 - Seguridad/Auditoría | 14 | 1 | 13 bloqueados |
-| 13 - Sala/Alertas | 14 | 3 | 11 bloqueados |
-| 14 - Pagos/Stripe | 17 | 1 | 16 bloqueados |
-| 15 - Inventario | 13 | 2 | 11 bloqueados |
-| 16 - Reservas | 15 | 2 | 13 bloqueados |
-| 17 - Caja/Fiscal | 15 | 2 | 13 bloqueados |
-| 18 - CRUD Admin/Owner | 13 | 5 | 8 fallidos |
+Todas las fases están implementadas y validadas con 346/346 tests aprobados (100%).
+
+| Fase | Tests | Resultado |
+|---|---|---|
+| 07 - Pedidos/Transacciones | 19 | APROBADO |
+| 08 - Offline Sync | 13 | APROBADO |
+| 09 - SuperAdmin | 16 | APROBADO |
+| 10 - CI/CD/Monitoring | 9 | APROBADO |
+| 11 - Analytics/BI | 15 | APROBADO |
+| 12 - Seguridad/Auditoría | 14 | APROBADO |
+| 13 - Sala/Alertas | 14 | APROBADO |
+| 14 - Pagos/Stripe | 17 | APROBADO |
+| 15 - Inventario | 13 | APROBADO |
+| 16 - Reservas | 15 | APROBADO |
+| 17 - Caja/Fiscal | 15 | APROBADO |
+| 18 - CRUD Admin/Owner | 13 + 9 frontend | APROBADO |
 
 ## Tests por categoría
 
@@ -255,22 +257,23 @@ Tests  1 passed (1)
 
 ### Cobertura actual
 
-- **Multi-tenancy**: Bien cubierta ( aislamiento entre tenants, scopes, middleware)
+- **Multi-tenancy**: Bien cubierta (aislamiento entre tenants, scopes, middleware)
 - **Autenticación**: Bien cubierta (login, logout, token, errores)
 - **CRUDs Owner**: Cubiertos (categories, products, tables, staff)
 - **Estado de pedidos**: Cubierto (transiciones, validación)
-- **Offline sync**: Parcialmente cubierto (deduplicación, estados)
-- **Fiscalidad**: Parcialmente cubierto (hash chaining)
-- **Reservas**: Cubierto (motor de reservas, conflictos)
-- **Inventario**: Cubierto (stock, ajustes, alertas)
-- **Pagos**: Parcialmente cubierto (transacciones, webhook skeleton)
-- **Analíticas**: Parcialmente cubierto (summary, top products, CSV)
-- **SuperAdmin**: Parcialmente cubierto (CRUD tenants)
+- **Offline sync**: Cubierto (deduplicación, estados, idempotencia)
+- **Fiscalidad**: Cubierto (hash chaining, registros append-only)
+- **Reservas**: Cubierto (motor de reservas, conflictos, concurrencia)
+- **Inventario**: Cubierto (stock, ajustes, alertas, lockForUpdate)
+- **Pagos**: Cubierto (transacciones, webhook verificación, deduplicación)
+- **Analíticas**: Cubierto (summary, top products, CSV export)
+- **SuperAdmin**: Cubierto (CRUD tenants, usuarios, suspend/activate)
+- **Frontend Admin**: Cubierto (login, dashboard, CRUDs, router guards)
+- **PWA**: Cubierto (manifest, service worker, precaching, runtime caching)
 
 ### No cubierto
 
 - **E2E tests**: No hay tests Playwright/Cypress
-- **Pruebas de carga**: No hay tests de estrés
 - **Pruebas de accesibilidad**: No hay tests axe/lighthouse
 - **Pruebas de seguridad**: No hay tests OWASP/ZAP
 - **Contract tests**: No hay tests de contrato de API

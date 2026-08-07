@@ -1,1 +1,0 @@
-import{_ as o}from"./index-e_v-eTmP.js";import{g as s,z as t,o as r}from"./vendor-core-E30FTMQW.js";import"./vendor-http-BY7rFuN-.js";const a={class:"owner-layout"};const e=o({},[["render",function(o,e){return r(),s("div",a,[t(o.$slots,"default",{},void 0)])}],["__scopeId","data-v-57c02a60"]]);export{e as default};

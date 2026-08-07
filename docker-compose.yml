@@ -45,12 +45,49 @@ services:
       - ./backend:/var/www/html
     ports:
       - "4005:8000"
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=lafrenona3_matrix
+      - DB_USERNAME=lafrenona3_user
+      - DB_PASSWORD=lafrenona3_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - CACHE_STORE=database
+      - SESSION_DRIVER=database
+      - QUEUE_CONNECTION=database
+      - BROADCAST_CONNECTION=log
+      - APP_URL=http://localhost:4005
+      - APP_CORS_ORIGINS=http://localhost:3000
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
+    networks:
+      - lafrenona3_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: lafrenona3_frontend
+    restart: unless-stopped
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_BASE_URL=http://localhost:4005/api
+      - VITE_REVERB_APP_KEY=${REVERB_APP_KEY:-}
+      - VITE_REVERB_HOST=localhost
+      - VITE_REVERB_PORT=6001
+      - VITE_REVERB_SCHEME=http
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+    depends_on:
+      - backend
     networks:
       - lafrenona3_network
 

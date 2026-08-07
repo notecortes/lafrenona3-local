@@ -1,0 +1,365 @@
+Actúa como desarrollador full-stack senior, DevOps engineer y QA automation engineer.
+
+Trabaja sobre el repositorio actual y sigue AGENTS.md, los ADR, las especificaciones de fase, los documentos QA y las pruebas de endurecimiento existentes.
+
+## Regla principal de ejecución
+
+No uses el entorno host para ejecutar ni validar el proyecto.
+
+No uses PHP, Composer, Node, npm, Vite, MySQL, Redis ni Laravel instalados directamente en el sistema anfitrión como fuente de verdad.
+
+El único entorno válido para:
+
+- Instalar dependencias.
+- Ejecutar Laravel.
+- Ejecutar Composer.
+- Ejecutar migraciones.
+- Ejecutar MySQL y Redis.
+- Ejecutar el frontend.
+- Construir assets.
+- Ejecutar tests.
+- Comprobar conectividad.
+- Verificar puertos.
+- Validar la aplicación.
+
+es Docker Compose.
+
+Todo debe funcionar mediante:
+
+```bash
+docker compose ...
+```
+
+o, cuando sea imprescindible para herramientas de Node:
+
+```bash
+docker compose run ...
+docker compose exec ...
+```
+
+No des por terminada ninguna fase, corrección o cambio hasta que se haya verificado dentro de Docker.
+
+## Objetivo inmediato
+
+Audita, corrige y deja operativo el entorno local completo del proyecto para que se pueda iniciar con un único comando:
+
+```bash
+docker compose up -d --build
+```
+
+Al finalizar, deben estar disponibles:
+
+| Servicio | URL o puerto esperado |
+|---|---|
+| Frontend Vue/Vite | http://localhost:3000 |
+| Backend Laravel | http://localhost:4005 |
+| MySQL desde host | 127.0.0.1:43306 |
+| Redis desde host | 127.0.0.1:46379 |
+
+La aplicación frontend debe poder comunicarse con el backend Laravel correctamente desde el navegador.
+
+## Problemas conocidos que debes verificar y resolver
+
+No asumas que ya están resueltos. Confírmalos mediante inspección, logs y comandos Docker.
+
+1. PHP:
+   - Composer requiere PHP >= 8.4.1.
+   - La imagen backend debe usar PHP 8.4 o superior.
+   - Verifica con:
+     ```bash
+     docker compose run --rm --no-deps backend php -v
+     docker compose run --rm --no-deps backend composer check-platform-reqs
+     ```
+
+2. Laravel y dependencias:
+   - El backend puede reiniciarse si `vendor/` no existe o si PHP no es compatible.
+   - Si `backend` está reiniciándose, usa `docker compose run --rm` en vez de `docker compose exec`.
+   - Composer debe instalarse dentro del contenedor PHP:
+     ```bash
+     docker compose run --rm --no-deps backend composer install
+     ```
+
+3. Base de datos:
+   - Dentro de Docker Laravel debe usar:
+     ```env
+     DB_HOST=db
+     DB_PORT=3306
+     DB_DATABASE=lafrenona3_matrix
+     DB_USERNAME=lafrenona3_user
+     DB_PASSWORD=lafrenona3_password
+     ```
+   - Nunca usar `127.0.0.1` como `DB_HOST` desde el contenedor backend.
+   - Comprueba la conexión desde Laravel y desde MySQL.
+   - Asegura que migraciones, cache y tablas necesarias existen.
+
+4. Caché:
+   - Si Laravel usa `CACHE_STORE=database`, debe existir una migración para la tabla `cache`.
+   - No crear tablas manualmente con SQL si Laravel puede crear una migración.
+   - Ejecutar migraciones antes de `cache:clear`.
+
+5. Frontend:
+   - Debe existir un servicio Docker `frontend` basado en Node.
+   - Debe exponer el puerto 3000.
+   - Debe ejecutar Vite con:
+     ```bash
+     npm run dev -- --host 0.0.0.0 --port 3000
+     ```
+   - No instalar npm dentro del contenedor `backend`, porque es un contenedor PHP.
+   - Debe corregirse cualquier incompatibilidad de versiones Vite, Vue, `@vitejs/plugin-vue`, Vitest o PWA.
+   - No usar `npm install --force` ni `--legacy-peer-deps`.
+   - Regenerar correctamente `package-lock.json` si las dependencias reales cambian.
+
+6. Frontend Vue:
+   - La aplicación no puede mostrar pantalla blanca.
+   - Corrige errores de arranque, router, Pinia, stores, imports, métodos inexistentes y variables de entorno.
+   - El error `store.initTheme is not a function` debe resolverse con una arquitectura correcta:
+     - El tema/accesibilidad pertenece a un store de accesibilidad.
+     - No añadir métodos de tema al store de autenticación solo para silenciar el error.
+   - La aplicación debe cargar al menos una ruta visible sin errores de consola bloqueantes.
+
+7. Comunicación frontend/backend:
+   - Las peticiones desde el navegador deben ir a:
+     ```text
+     http://localhost:4005
+     ```
+     o mediante un proxy Vite correctamente configurado.
+   - No usar `http://backend:8000` en código que se ejecuta en el navegador.
+   - Configurar CORS y Sanctum solo según los requisitos reales del proyecto.
+   - No relajar CORS a `*` si hay autenticación o credenciales.
+
+8. Seguridad y secretos:
+   - No publicar ni introducir secretos reales.
+   - No versionar `vendor`, `node_modules`, `dist`, `.env` o credenciales.
+   - Si detectas secretos versionados, documenta el riesgo y crea ejemplos seguros como `.env.example`.
+   - No borres datos ni volúmenes existentes sin avisar antes.
+   - Para un reinicio destructivo, explica el impacto y solicita aprobación explícita.
+
+## Flujo de trabajo obligatorio
+
+### Paso 1 — Diagnóstico sin cambios destructivos
+
+Inspecciona:
+
+- `docker-compose.yml`
+- `docker-compose.staging.yml`, si existe
+- `docker/backend.Dockerfile`
+- `backend/composer.json`
+- `backend/composer.lock`
+- `backend/.env.example`
+- `frontend/package.json`
+- `frontend/package-lock.json`
+- `frontend/vite.config.js`
+- `frontend/src/main.js`
+- Stores Pinia, router, servicios API y configuración Echo.
+- `.gitignore`
+- README y documentación existente.
+
+Ejecuta inicialmente solo comandos de inspección:
+
+```bash
+docker compose config
+docker compose ps
+docker compose images
+docker compose logs --tail=150 backend
+docker compose logs --tail=150 db
+```
+
+Crea:
+
+```text
+qa_resultados_implementacion/00_diagnostico_docker_local.md
+```
+
+Incluye:
+
+- Servicios detectados y puertos.
+- Versiones PHP, Node, Composer, Vite y Vue requeridas.
+- Fallos reproducibles.
+- Cambios necesarios.
+- Riesgos de seguridad.
+- Datos o volúmenes que podrían perderse.
+- Plan de corrección en orden.
+
+Muestra el diagnóstico y espera mi aprobación antes de realizar acciones destructivas.
+
+### Paso 2 — Corrección e implementación
+
+Tras mi aprobación:
+
+1. Corrige Docker Compose, Dockerfiles y configuración de entorno.
+2. Añade un servicio frontend Docker si no existe.
+3. Alinea versiones de PHP, Composer, Node, Vite, Vue y plugins.
+4. Corrige los errores del frontend que bloqueen el arranque.
+5. Corrige rutas, stores, Pinia, Vue Router y configuración API si están rotos.
+6. Crea o actualiza `.env.example` y documentación de arranque.
+7. Mantén los cambios pequeños, claros y versionables.
+8. No reescribas funcionalidades correctas sin justificación.
+
+### Paso 3 — Verificación obligatoria en Docker
+
+Debes ejecutar y guardar la salida resumida de estos grupos de pruebas.
+
+#### Infraestructura
+
+```bash
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 backend
+docker compose logs --tail=100 frontend
+docker compose logs --tail=100 db
+docker compose logs --tail=100 redis
+```
+
+Criterios:
+
+- `db` saludable.
+- `redis` activo.
+- `backend` no se reinicia.
+- `frontend` no se reinicia.
+- No hay errores fatales repetidos en logs.
+
+#### Backend
+
+```bash
+docker compose exec backend php -v
+docker compose exec backend composer check-platform-reqs
+docker compose exec backend php artisan about
+docker compose exec backend php artisan migrate:status
+docker compose exec backend php artisan test
+```
+
+Si el backend no está arrancado, usa temporalmente:
+
+```bash
+docker compose run --rm --no-deps backend <comando>
+```
+
+#### Frontend
+
+Ejecuta las pruebas desde el contenedor frontend, no desde el host:
+
+```bash
+docker compose exec frontend npm run build
+docker compose exec frontend npm run test
+```
+
+Ejecuta `npm run lint` solo si existe realmente ese script.
+
+#### Conectividad HTTP
+
+```bash
+curl -i http://localhost:4005
+curl -I http://localhost:3000
+```
+
+Comprueba que:
+
+- Laravel responde en `4005`.
+- Vite/frontend responde en `3000`.
+- El frontend no muestra pantalla blanca.
+- La consola del navegador no contiene errores bloqueantes.
+- Las rutas públicas iniciales cargan.
+- Los errores de API son visibles y controlados.
+
+### Paso 4 — Bucle de corrección
+
+Si falla un comando, prueba o servicio:
+
+1. Lee los logs completos relevantes.
+2. Identifica la causa raíz.
+3. Corrige la causa, no el síntoma.
+4. Repite el comando fallido.
+5. Ejecuta regresión mínima afectada.
+6. Repite hasta que el resultado sea correcto y reproducible.
+
+No ocultes fallos mediante:
+
+- `--force`
+- `--legacy-peer-deps`
+- `--ignore-platform-reqs`
+- Desactivar tests.
+- Comentar llamadas importantes.
+- Capturar excepciones y silenciarlas.
+- Relajar validaciones, CORS, autenticación o seguridad.
+
+### Condición de parada
+
+Solo puedes detenerte cuando ocurra una de estas dos condiciones:
+
+A. Éxito:
+- Todos los servicios arrancan mediante Docker Compose.
+- Frontend disponible en `http://localhost:3000`.
+- Backend disponible en `http://localhost:4005`.
+- Migraciones ejecutadas.
+- Tests disponibles ejecutados.
+- Build frontend correcto.
+- Sin errores bloqueantes de consola, logs o router.
+- Documentación de instalación actualizada.
+
+B. Bloqueo externo real:
+- Falta una credencial externa imprescindible.
+- Hay una dependencia privada inaccesible.
+- Falta código esencial que no puede inferirse de la documentación.
+- Una decisión de arquitectura cambia requisitos funcionales.
+- Se requiere borrar datos/volúmenes existentes.
+
+En caso B, no inventes una solución. Documenta:
+
+- Comando ejecutado.
+- Error completo.
+- Causa probable.
+- Impacto.
+- Solución recomendada.
+- Acción concreta que debo aprobar o realizar.
+
+## Informe final obligatorio
+
+Crea:
+
+```text
+qa_resultados_implementacion/01_resultado_docker_local.md
+```
+
+Debe contener:
+
+# Resultado — Entorno local Docker
+
+## Estado
+APROBADO / APROBADO CON OBSERVACIONES / BLOQUEADO / NO APROBADO
+
+## Servicios
+
+| Servicio | Estado | Puerto | Verificación |
+|---|---|---:|---|
+
+## Cambios realizados
+
+| Archivo | Cambio | Motivo |
+|---|---|---|
+
+## Comandos ejecutados
+
+```bash
+# Todos los comandos relevantes y resultado resumido
+```
+
+## Pruebas
+
+| Área | Prueba | Resultado |
+|---|---|---|
+
+## Problemas corregidos
+
+| Problema | Causa raíz | Corrección |
+|---|---|---|
+
+## Riesgos pendientes
+
+| Severidad | Riesgo | Acción necesaria |
+|---|---|---|
+
+## Instrucciones finales de arranque
+
+Debe incluir el comando mínimo para que cualquier desarrollador pueda iniciar el proyecto desde cero.
+
+No avances a nuevas fases funcionales hasta dejar el entorno local Docker aprobado.
