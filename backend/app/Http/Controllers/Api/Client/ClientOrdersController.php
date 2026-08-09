@@ -19,22 +19,43 @@ class ClientOrdersController extends Controller
 {
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'session_token' => 'required|string|max:64',
-            'restaurant_slug' => 'required|string|max:155',
-        ]);
+        $restaurantSlug = $request->input('restaurant_slug')
+            ?? $request->query('restaurant');
 
-        $table = Table::where('secret_token', $request->input('session_token'))
-            ->first();
-
-        if ($table === null) {
-            return response()->json(['message' => 'Invalid session token.'], 404);
+        if (empty($restaurantSlug)) {
+            $restaurant = \App\Models\Restaurant::where('status', 'active')->first();
+        } else {
+            $restaurant = \App\Models\Restaurant::where('slug', $restaurantSlug)->first();
         }
 
-        $restaurant = $table->restaurant;
+        if ($restaurant === null) {
+            return response()->json(['message' => 'Restaurant not found.'], 404);
+        }
 
         if ($restaurant->status !== 'active') {
             return response()->json(['message' => 'Restaurant is currently closed.'], 403);
+        }
+
+        $sessionToken = $request->input('session_token');
+        $table = null;
+
+        if ($sessionToken !== null && $sessionToken !== '') {
+            $table = Table::where('restaurant_id', $restaurant->id)
+                ->where(function ($q) use ($sessionToken) {
+                    $q->where('secret_token', $sessionToken)
+                      ->orWhere('session_token', $sessionToken);
+                })
+                ->first();
+
+            if ($table === null) {
+                return response()->json(['message' => 'Invalid session token.'], 404);
+            }
+        } else {
+            $table = Table::where('restaurant_id', $restaurant->id)->first();
+        }
+
+        if ($table === null) {
+            return response()->json(['message' => 'No tables found for this restaurant.'], 404);
         }
 
         $idempotencyKey = (string) $request->header('X-Idempotency-Key', Str::uuid()->toString());

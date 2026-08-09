@@ -37,6 +37,18 @@ class OrderItemsController extends Controller
         $newStatus = $request->input('status');
         $previousStatus = $orderItem->status;
 
+        if ($newStatus === $previousStatus) {
+            return response()->json([
+                'message' => 'Status already updated.',
+                'data' => [
+                    'id' => $orderItem->id,
+                    'status' => $orderItem->status,
+                    'previous_status' => $previousStatus,
+                    'updated_at' => $orderItem->updated_at,
+                ],
+            ], 200);
+        }
+
         $allowed = $this->allowedTransitions[$previousStatus] ?? [];
 
         if (! in_array($newStatus, $allowed, true)) {

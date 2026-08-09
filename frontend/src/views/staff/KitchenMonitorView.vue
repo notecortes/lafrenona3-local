@@ -133,7 +133,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import api from '@/services/api'
 import ConnectionStatus from '@/components/ui/ConnectionStatus.vue'
 import Skeleton from '@/components/ui/Skeleton.vue'
@@ -150,11 +150,16 @@ const items = ref([])
 const loading = ref(true)
 const error = ref('')
 let echoListener = null
+let pollInterval = null
 
 const areas = [
   { value: 'kitchen', label: '🍳 Cocina' },
   { value: 'bar', label: '🍸 Barra' },
 ]
+
+watch(currentArea, () => {
+  fetchItems(false)
+})
 
 const sortedItems = computed(() => {
   return [...items.value].sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
@@ -164,8 +169,10 @@ const pendingCount = computed(() => items.value.filter((i) => i.status === 'pend
 const cookingCount = computed(() => items.value.filter((i) => i.status === 'cooking').length)
 const readyCount = computed(() => items.value.filter((i) => i.status === 'ready').length)
 
-async function fetchItems() {
-  loading.value = true
+async function fetchItems(silent = false) {
+  if (!silent) {
+    loading.value = true
+  }
   error.value = ''
   try {
     const response = await api.get('/v1/staff/order-items/pending', {
@@ -173,9 +180,13 @@ async function fetchItems() {
     })
     items.value = response.data.data || []
   } catch (err) {
-    error.value = err.response?.data?.message || t('app.errorLoading', locale.value)
+    if (!silent) {
+      error.value = err.response?.data?.message || t('app.errorLoading', locale.value)
+    }
   } finally {
-    loading.value = false
+    if (!silent) {
+      loading.value = false
+    }
   }
 }
 
@@ -232,6 +243,8 @@ function connectWebSocket() {
       const item = items.value.find((i) => i.id === data.order_item?.id)
       if (item) {
         item.status = data.order_item?.status || item.status
+      } else {
+        fetchItems(true)
       }
     })
 }
@@ -244,12 +257,18 @@ function disconnectWebSocket() {
 }
 
 onMounted(() => {
-  fetchItems()
+  fetchItems(false)
   connectWebSocket()
+  pollInterval = setInterval(() => {
+    fetchItems(true)
+  }, 4000)
 })
 
 onUnmounted(() => {
   disconnectWebSocket()
+  if (pollInterval) {
+    clearInterval(pollInterval)
+  }
 })
 </script>
 

@@ -48,16 +48,31 @@ class AnalyticsController extends Controller
             ->when($endDate !== null, fn ($q) => $q->where('orders.created_at', '<=', $endDate . ' 23:59:59'))
             ->sum('order_items.quantity');
 
-        $peakHours = DB::table('orders')
-            ->where('restaurant_id', $restaurantId)
-            ->where('status', 'closed')
-            ->when($startDate !== null, fn ($q) => $q->where('created_at', '>=', $startDate . ' 00:00:00'))
-            ->when($endDate !== null, fn ($q) => $q->where('created_at', '<=', $endDate . ' 23:59:59'))
-            ->selectRaw("CAST(strftime('%H', created_at) AS INTEGER) as hour, COUNT(*) as order_count")
-            ->groupByRaw("CAST(strftime('%H', created_at) AS INTEGER)")
-            ->orderByRaw('order_count DESC')
-            ->limit(5)
-            ->get();
+        $driver = DB::getDriverName();
+
+        if ($driver === 'mysql') {
+            $peakHours = DB::table('orders')
+                ->where('restaurant_id', $restaurantId)
+                ->where('status', 'closed')
+                ->when($startDate !== null, fn ($q) => $q->where('created_at', '>=', $startDate . ' 00:00:00'))
+                ->when($endDate !== null, fn ($q) => $q->where('created_at', '<=', $endDate . ' 23:59:59'))
+                ->selectRaw("HOUR(created_at) as hour, COUNT(*) as order_count")
+                ->groupByRaw("HOUR(created_at)")
+                ->orderByRaw('order_count DESC')
+                ->limit(5)
+                ->get();
+        } else {
+            $peakHours = DB::table('orders')
+                ->where('restaurant_id', $restaurantId)
+                ->where('status', 'closed')
+                ->when($startDate !== null, fn ($q) => $q->where('created_at', '>=', $startDate . ' 00:00:00'))
+                ->when($endDate !== null, fn ($q) => $q->where('created_at', '<=', $endDate . ' 23:59:59'))
+                ->selectRaw("CAST(strftime('%H', created_at) AS INTEGER) as hour, COUNT(*) as order_count")
+                ->groupByRaw("CAST(strftime('%H', created_at) AS INTEGER)")
+                ->orderByRaw('order_count DESC')
+                ->limit(5)
+                ->get();
+        }
 
         $firstOrder = DB::table('orders')
             ->where('restaurant_id', $restaurantId)

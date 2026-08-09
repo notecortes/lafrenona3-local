@@ -108,7 +108,7 @@ class StagingDatabaseSeeder extends Seeder
             $owner->subscription()->create([
                 'restaurant_id' => $restaurant->id,
                 'plan_name' => $index === 2 ? 'suspended' : 'premium',
-                'status' => $index === 2 ? 'suspended' : 'active',
+                'status' => $index === 2 ? 'canceled' : 'active',
                 'ends_at' => now()->addMonths(12),
             ]);
         }
@@ -177,6 +177,7 @@ class StagingDatabaseSeeder extends Seeder
                     'number' => "A-{$number}",
                     'status' => 'free',
                     'capacity' => 4,
+                    'secret_token' => \Illuminate\Support\Str::random(32),
                 ]);
             }
         }
@@ -184,7 +185,7 @@ class StagingDatabaseSeeder extends Seeder
 
     protected function createSampleOrders(): void
     {
-        $statuses = ['pending', 'closed'];
+        $statuses = ['open', 'closed'];
         $products = Product::where('is_available', true)->get();
 
         foreach ($products->take(10) as $product) {
@@ -205,9 +206,9 @@ class StagingDatabaseSeeder extends Seeder
         foreach ($restaurants as $restaurant) {
             Reservation::create([
                 'restaurant_id' => $restaurant->id,
-                'guest_name' => 'Test Guest',
-                'guest_email' => 'guest' . $restaurant->id . '@staging.lafrenona3.test',
-                'guest_phone' => '+34600000000',
+                'customer_name' => 'Test Guest',
+                'customer_email' => 'guest' . $restaurant->id . '@staging.lafrenona3.test',
+                'customer_phone' => '+34600000000',
                 'party_size' => 4,
                 'reservation_date' => now()->addDays(1),
                 'reservation_time' => '20:00:00',
@@ -220,22 +221,23 @@ class StagingDatabaseSeeder extends Seeder
     protected function createInventoryData(): void
     {
         $ingredients = [
-            ['name' => 'Tomatoes', 'unit' => 'kg', 'quantity' => 50, 'min_quantity' => 10],
-            ['name' => 'Olive Oil', 'unit' => 'liters', 'quantity' => 20, 'min_quantity' => 5],
-            ['name' => 'Flour', 'unit' => 'kg', 'quantity' => 30, 'min_quantity' => 8],
-            ['name' => 'Milk', 'unit' => 'liters', 'quantity' => 25, 'min_quantity' => 10],
+            ['name' => ['es' => 'Tomates', 'en' => 'Tomatoes'], 'unit' => 'kg', 'stock_quantity' => 50, 'min_stock' => 10],
+            ['name' => ['es' => 'Aceite de Oliva', 'en' => 'Olive Oil'], 'unit' => 'liters', 'stock_quantity' => 20, 'min_stock' => 5],
+            ['name' => ['es' => 'Harina', 'en' => 'Flour'], 'unit' => 'kg', 'stock_quantity' => 30, 'min_stock' => 8],
+            ['name' => ['es' => 'Leche', 'en' => 'Milk'], 'unit' => 'liters', 'stock_quantity' => 25, 'min_stock' => 10],
         ];
 
-        foreach ($ingredients as $ingredientData) {
-            $ingredient = Ingredient::create($ingredientData);
+        foreach ([1, 2] as $restaurantId) {
+            foreach ($ingredients as $ingredientData) {
+                $data = array_merge($ingredientData, ['restaurant_id' => $restaurantId]);
+                $ingredient = Ingredient::create($data);
 
-            foreach ([1, 2] as $restaurantId) {
                 InventoryAdjustment::create([
                     'restaurant_id' => $restaurantId,
                     'ingredient_id' => $ingredient->id,
-                    'adjustment_type' => 'initial',
-                    'quantity' => $ingredientData['quantity'],
-                    'note' => 'Initial stock for staging',
+                    'adjustment_type' => 'in',
+                    'quantity' => $ingredientData['stock_quantity'],
+                    'notes' => 'Initial stock for staging',
                 ]);
             }
         }

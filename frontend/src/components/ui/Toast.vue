@@ -7,7 +7,7 @@
         `toast--${toast.type}`,
       ]"
       role="alert"
-      :aria-live="polite"
+      aria-live="polite"
     >
       <span class="toast__icon" aria-hidden="true">{{ icon }}</span>
       <span class="toast__message">{{ toast.message }}</span>

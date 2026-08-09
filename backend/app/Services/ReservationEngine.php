@@ -26,15 +26,29 @@ class ReservationEngine
                 ->get();
 
             foreach ($tables as $table) {
-                $hasConflict = Reservation::where('restaurant_id', $restaurantId)
-                    ->where('table_id', $table->id)
-                    ->whereNotIn('status', ['completed', 'cancelled'])
-                    ->where('reservation_date', $date)
-                    ->whereRaw(
-                        'ABS((julianday(?) - julianday(reservation_time)) * 1440) <= ?',
-                        [$date . ' ' . $time, $exclusionMinutes]
-                    )
-                    ->exists();
+                $driver = DB::getDriverName();
+
+                if ($driver === 'mysql') {
+                    $hasConflict = Reservation::where('restaurant_id', $restaurantId)
+                        ->where('table_id', $table->id)
+                        ->whereNotIn('status', ['completed', 'cancelled'])
+                        ->where('reservation_date', $date)
+                        ->whereRaw(
+                            'ABS(TIMESTAMPDIFF(MINUTE, reservation_time, ?)) <= ?',
+                            [$date . ' ' . $time, $exclusionMinutes]
+                        )
+                        ->exists();
+                } else {
+                    $hasConflict = Reservation::where('restaurant_id', $restaurantId)
+                        ->where('table_id', $table->id)
+                        ->whereNotIn('status', ['completed', 'cancelled'])
+                        ->where('reservation_date', $date)
+                        ->whereRaw(
+                            'ABS((julianday(?) - julianday(reservation_time)) * 1440) <= ?',
+                            [$date . ' ' . $time, $exclusionMinutes]
+                        )
+                        ->exists();
+                }
 
                 if (! $hasConflict) {
                     return $table;

@@ -4,7 +4,7 @@ Aplicación SaaS para la gestión integral de restaurantes multi-tenant, con aut
 
 ## Tecnologías
 
-- **Backend**: Laravel 11, PHP 8.3, MySQL 8.0, Redis, Laravel Sanctum, Laravel Reverb
+- **Backend**: Laravel 11, PHP 8.4, MySQL 8.0, Redis, Laravel Sanctum, Laravel Reverb
 - **Frontend**: Vue 3, Vite, Pinia, Axios, PWA (vite-plugin-pwa, workbox)
 - **Agente de impresión**: Python 3, asyncio, websockets, ESC/POS
 - **Infraestructura**: Docker Compose
@@ -66,19 +66,24 @@ docker compose exec backend php artisan tinker
 ```
 
 ```php
-$restaurant = \App\Models\Restaurant::create([
-    'name' => 'Mi Restaurante',
-    'slug' => 'mi-restaurante',
-    'status' => 'active',
-]);
-
+// 1. Crear usuario owner
 $user = \App\Models\User::create([
     'name' => 'Owner',
     'email' => 'owner@example.com',
     'password' => \Illuminate\Support\Facades\Hash::make('password123'),
     'role' => 'owner',
-    'restaurant_id' => $restaurant->id,
 ]);
+
+// 2. Crear restaurante vinculado al owner
+$restaurant = \App\Models\Restaurant::create([
+    'name' => 'Mi Restaurante',
+    'slug' => 'mi-restaurante',
+    'status' => 'active',
+    'owner_id' => $user->id,
+]);
+
+// 3. Vincular usuario al restaurante
+$user->update(['restaurant_id' => $restaurant->id]);
 
 echo "Login: owner@example.com / password123\n";
 ```

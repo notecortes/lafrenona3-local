@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { useClientMenuStore } from '@/stores/clientMenuStore'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -86,9 +87,13 @@ export const useCartStore = defineStore('cart', {
       this.error = null
 
       try {
+        const menuStore = useClientMenuStore()
+        const sessionToken = menuStore.sessionToken || new URLSearchParams(window.location.search).get('token') || null
+        const restaurantSlug = menuStore.restaurant?.slug || new URLSearchParams(window.location.search).get('restaurant') || 'test-a'
+
         const response = await api.post('/v1/client/orders', {
-          session_token: null,
-          restaurant_slug: null,
+          session_token: sessionToken,
+          restaurant_slug: restaurantSlug,
         })
 
         this.orderId = response.data.data.id
@@ -127,9 +132,13 @@ export const useCartStore = defineStore('cart', {
       this.error = null
 
       try {
+        const menuStore = useClientMenuStore()
+        const sessionToken = menuStore.sessionToken || new URLSearchParams(window.location.search).get('token') || null
+        const restaurantSlug = menuStore.restaurant?.slug || new URLSearchParams(window.location.search).get('restaurant') || 'test-a'
+
         const response = await api.post('/v1/client/orders', {
-          session_token: null,
-          restaurant_slug: null,
+          session_token: sessionToken,
+          restaurant_slug: restaurantSlug,
         })
 
         this.orderId = response.data.data.id

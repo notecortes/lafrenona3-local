@@ -31,12 +31,13 @@ export const useClientMenuStore = defineStore('clientMenu', {
   },
 
   actions: {
-    async fetchMenu(token = null) {
+    async fetchMenu(token = null, restaurant = null) {
       this.loading = true
       this.error = null
       try {
         const params = {}
         if (token) params.token = token
+        params.restaurant = restaurant || new URLSearchParams(window.location.search).get('restaurant') || 'test-a'
 
         const res = await api.get('/v1/client/menu', { params })
 

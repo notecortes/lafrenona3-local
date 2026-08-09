@@ -1,8 +1,12 @@
 <template>
   <div class="superadmin-layout">
-    <slot></slot>
+    <RouterView />
   </div>
 </template>
+
+<script setup>
+import { RouterView } from 'vue-router'
+</script>
 
 <style scoped>
 .superadmin-layout {

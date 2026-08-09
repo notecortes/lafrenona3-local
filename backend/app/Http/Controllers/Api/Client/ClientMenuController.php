@@ -36,7 +36,14 @@ class ClientMenuController extends Controller
                 ->where('restaurant_id', $restaurant->id)
                 ->where('is_active', true)
                 ->orderBy('sort_order')
-                ->get();
+                ->get()
+                ->map(fn ($cat) => [
+                    'id' => $cat->id,
+                    'name' => $cat->name,
+                    'description' => $cat->description ?? null,
+                    'sort_order' => $cat->sort_order,
+                ])
+                ->toArray();
         });
 
         $products = Cache::remember("products.{$cacheKey}", 900, function () use ($restaurant) {
@@ -44,7 +51,17 @@ class ClientMenuController extends Controller
                 ->where('restaurant_id', $restaurant->id)
                 ->where('is_available', true)
                 ->with(['category' => fn ($q) => $q->select('id', 'restaurant_id', 'name')])
-                ->get();
+                ->get()
+                ->map(fn ($product) => [
+                    'id' => $product->id,
+                    'category_id' => $product->category_id,
+                    'name' => $product->name,
+                    'description' => $product->description ?? null,
+                    'price' => $product->price,
+                    'allergens' => $product->allergens ?? [],
+                    'is_available' => (bool) $product->is_available,
+                ])
+                ->toArray();
         });
 
         $sessionToken = null;
@@ -77,21 +94,8 @@ class ClientMenuController extends Controller
                 'name' => $restaurant->name,
                 'slug' => $restaurant->slug,
             ],
-            'categories' => $categories->map(fn ($cat) => [
-                'id' => $cat->id,
-                'name' => $cat->name,
-                'description' => $cat->description ?? null,
-                'sort_order' => $cat->sort_order,
-            ]),
-            'products' => $products->map(fn ($product) => [
-                'id' => $product->id,
-                'category_id' => $product->category_id,
-                'name' => $product->name,
-                'description' => $product->description ?? null,
-                'price' => $product->price,
-                'allergens' => $product->allergens ?? [],
-                'is_available' => $product->is_available,
-            ]),
+            'categories' => $categories,
+            'products' => $products,
             'session_token' => $sessionToken,
             'table_number' => $tableNumber,
         ]);

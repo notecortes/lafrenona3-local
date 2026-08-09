@@ -1,8 +1,12 @@
 <template>
   <div class="staff-layout">
-    <slot></slot>
+    <RouterView />
   </div>
 </template>
+
+<script setup>
+import { RouterView } from 'vue-router'
+</script>
 
 <style scoped>
 .staff-layout {

@@ -24,6 +24,7 @@ class Table extends Model
         'seated_at',
         'assistance_status',
         'assistance_requested_at',
+        'capacity',
     ];
 
     protected $casts = [

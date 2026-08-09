@@ -7,18 +7,23 @@ services:
       - "43306:3306"
     environment:
       MYSQL_DATABASE: lafrenona3_matrix
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_USER: lafrenona3_user
-      MYSQL_PASSWORD: lafrenona3_password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-local_root_password_change_me}
+      MYSQL_USER: ${MYSQL_USER:-lafrenona3_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lafrenona3_password}
     volumes:
       - lafrenona3_db_data:/var/lib/mysql
     networks:
       - lafrenona3_network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} || exit 1"
+        ]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   redis:
     image: redis:alpine
@@ -32,7 +37,7 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend:
     build:
@@ -46,19 +51,27 @@ services:
     ports:
       - "4005:8000"
     environment:
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=lafrenona3_matrix
-      - DB_USERNAME=lafrenona3_user
-      - DB_PASSWORD=lafrenona3_password
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - CACHE_STORE=database
-      - SESSION_DRIVER=database
-      - QUEUE_CONNECTION=database
-      - BROADCAST_CONNECTION=log
-      - APP_URL=http://localhost:4005
-      - APP_CORS_ORIGINS=http://localhost:3000
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:4005
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: "3306"
+      DB_DATABASE: lafrenona3_matrix
+      DB_USERNAME: ${MYSQL_USER:-lafrenona3_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-lafrenona3_password}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      BROADCAST_CONNECTION: log
+    command:
+      - sh
+      - -lc
+      - >-
+        if [ ! -f vendor/autoload.php ]; then composer install --no-interaction; fi;
+        exec php artisan serve --host=0.0.0.0 --port=8000
     depends_on:
       db:
         condition: service_healthy
@@ -68,24 +81,27 @@ services:
       - lafrenona3_network
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: node:22-alpine
     container_name: lafrenona3_frontend
     restart: unless-stopped
     working_dir: /app
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - lafrenona3_frontend_node_modules:/app/node_modules
     ports:
       - "3000:3000"
     environment:
-      - VITE_API_BASE_URL=http://localhost:4005/api
-      - VITE_REVERB_APP_KEY=${REVERB_APP_KEY:-}
-      - VITE_REVERB_HOST=localhost
-      - VITE_REVERB_PORT=6001
-      - VITE_REVERB_SCHEME=http
-    command: npm run dev -- --host 0.0.0.0 --port 3000
+      VITE_API_BASE_URL: http://localhost:4005/api
+      VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-}
+      VITE_REVERB_HOST: localhost
+      VITE_REVERB_PORT: "6001"
+      VITE_REVERB_SCHEME: http
+    command:
+      - sh
+      - -lc
+      - >-
+        if [ ! -x node_modules/.bin/vite ]; then npm install; fi;
+        exec npm run dev -- --host=0.0.0.0 --port=3000
     depends_on:
       - backend
     networks:
@@ -97,4 +113,6 @@ networks:
 
 volumes:
   lafrenona3_db_data:
+    driver: local
+  lafrenona3_frontend_node_modules:
     driver: local

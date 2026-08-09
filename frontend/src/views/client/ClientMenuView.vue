@@ -243,7 +243,8 @@ async function handleSendOrder() {
 
 async function fetchMenu() {
   const token = route.params.token || null
-  await menuStore.fetchMenu(token)
+  const restaurant = route.query.restaurant || null
+  await menuStore.fetchMenu(token, restaurant)
 }
 
 onMounted(() => {

@@ -32,7 +32,7 @@
 <script setup>
 import { t } from '@/config/i18n'
 
-defineProps({
+const props = defineProps({
   categories: {
     type: Array,
     required: true,

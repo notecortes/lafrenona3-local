@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('name', 155);
             $table->string('email', 155)->unique();
             $table->string('password', 255);
-            $table->enum('role', ['superadmin', 'owner', 'waiter', 'kitchen', 'bar']);
+            $table->enum('role', ['superadmin', 'owner', 'waiter', 'kitchen', 'bar', 'suspended']);
             $table->unsignedBigInteger('restaurant_id')->nullable()->index();
             $table->rememberToken();
             $table->timestamps();

@@ -52,6 +52,8 @@ Route::middleware(['auth:sanctum', 'tenant.context', 'check.owner.restaurant', '
     Route::put('/order-items/bulk', [OrderItemsController::class, 'bulkUpdate']);
     Route::post('/orders/{order}/close', [StaffBillingController::class, 'closeOrder']);
     Route::get('/room', [StaffRoomController::class, 'index']);
+    Route::post('/tables/{table}/dismiss-assistance', [StaffRoomController::class, 'dismissAssistance']);
+    Route::put('/tables/{table}/status', [StaffRoomController::class, 'updateStatus']);
     Route::post('/sync/offline', [SyncOfflineController::class, 'sync']);
     Route::post('/reservations/{reservation}/seat', [StaffReservationController::class, 'seat']);
     Route::get('/cash-sessions', [CashSessionController::class, 'index']);
