@@ -14,7 +14,7 @@
     "axios": "^1.6.0",
     "laravel-echo": "^1.16.0",
     "lodash.debounce": "^4.0.8",
-    "pinia": "^2.1.0",
+    "pinia": "^4.0.2",
     "pusher-js": "^8.4.0-rc2",
     "vue": "^3.4.0",
     "vue-router": "^4.2.0"
